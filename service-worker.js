@@ -1,14 +1,14 @@
 const SW_VERSION = 'v1';
 const STATIC_CACHE = `static-cache-${SW_VERSION}`;
 
+// Important: no leading slashes — use relative paths for GitHub Pages
 const ASSETS = [
-  '/',
-  '/index.html',
-  '/app.js',
-  '/diagnoses.js',
-  '/organs.js',
-  '/static/icons/icon-192.png',
-  '/static/icons/icon-512.png'
+  'index.html',
+  'app.js',
+  'diagnoses.js',
+  'organs.js',
+  'static/icons/icon-192.png',
+  'static/icons/icon-512.png'
 ];
 
 // Install: cache assets
@@ -24,7 +24,7 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys().then(keys => Promise.all(
       keys.filter(key => key !== STATIC_CACHE)
-        .map(key => caches.delete(key))
+          .map(key => caches.delete(key))
     ))
   );
   self.clients.claim();
@@ -45,7 +45,7 @@ self.addEventListener('fetch', event => {
           caches.open(STATIC_CACHE).then(cache => cache.put(event.request, clone));
           return res;
         })
-        .catch(() => caches.match('/index.html'));
+        .catch(() => caches.match('index.html'));  // also remove leading slash
     })
   );
 });
