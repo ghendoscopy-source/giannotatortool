@@ -5,8 +5,8 @@
 <title>GI Organ Annotator — Clean</title>
 <meta name="viewport" content="width=device-width,initial-scale=1" />
 
-<!-- 🆕 PWA manifest + theme color -->
-<link rel="manifest" href="/manifest.json">
+<!-- PWA manifest + theme color -->
+<link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#ff9bb0">
 
 <style>
@@ -119,11 +119,11 @@
 <script src="diagnoses.js"></script>
 <script src="app.js"></script>
 
-<!-- 🆕 Register service worker -->
+<!-- Register service worker -->
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/service-worker.js')
+    navigator.serviceWorker.register('service-worker.js')
       .then(reg => console.log("Service Worker registered:", reg.scope))
       .catch(err => console.warn("Service Worker registration failed:", err));
   });
