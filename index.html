@@ -1,0 +1,134 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>GI Organ Annotator — Clean</title>
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+
+<!-- 🆕 PWA manifest + theme color -->
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#ff9bb0">
+
+<style>
+  :root{--accent:#0b64d6}
+  body{margin:0;font-family:system-ui,Segoe UI,Arial;background:#f4f6f8}
+  .wrap{display:flex;gap:16px;padding:12px;height:100vh;box-sizing:border-box}
+  .panel{width:420px;background:white;border-radius:10px;padding:14px;box-shadow:0 6px 20px rgba(10,20,40,0.06);display:flex;flex-direction:column;gap:10px}
+  h2{margin:0 0 6px 0;font-size:16px}
+  .label{font-weight:600;color:#333}
+  #organName{font-size:14px;color:var(--accent);font-weight:700}
+  select,button,input{width:100%;padding:8px;border-radius:8px;border:1px solid #d6dcef;background:white;box-sizing:border-box}
+  button.primary{background:var(--accent);color:white;border:none}
+  .controls{display:flex;gap:8px}
+  .controls button{flex:1}
+  #canvasHolder{flex:1;display:flex;align-items:center;justify-content:center;background:#eef3fb;border-radius:10px;padding:16px;position:relative}
+  canvas{max-width:100%;height:auto;border-radius:6px;box-shadow:0 6px 18px rgba(20,30,60,0.08);cursor:crosshair}
+  .tabs{display:flex;gap:8px}
+  .tab{flex:1;padding:8px;border-radius:8px;text-align:center;cursor:pointer;background:#f6f8fb;border:1px solid #e2e8f0}
+  .tab.active{background:var(--accent);color:white;border:none}
+  .tool-row{display:flex;gap:8px}
+  .small-hint{font-size:11px;color:#666}
+  .row{display:flex;gap:8px;align-items:center}
+  .slider{width:100%}
+  .status-box{font-size:12px;color:#666;margin-top:6px}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="panel">
+    <h2>GI Annotator</h2>
+
+    <div class="tabs">
+      <div id="tabOrgan" class="tab active">Organ Mode</div>
+      <div id="tabDraw" class="tab">Drawing Mode</div>
+    </div>
+
+    <div class="label" style="margin-top:8px;">Choose Image</div>
+    <select id="imageSelect"><option>-- scanning for images --</option></select>
+
+    <div class="label" style="margin-top:8px;">Active selection</div>
+    <div id="organName">None</div>
+
+    <div id="diagnosisPanel" style="display:none">
+      <div class="label">Diagnosis</div>
+      <select id="diagnosisSelect"><option value="">-- choose diagnosis --</option></select>
+
+      <div id="otherBoxWrapper" style="display:none;margin-top:8px">
+        <input id="diagnosisOtherText" placeholder="Enter custom text for Other" />
+      </div>
+    </div>
+
+    <div class="label" style="margin-top:10px;">Drawing tools</div>
+    <div style="display:flex;gap:8px">
+      <select id="drawModeSelect">
+        <option value="pen">Free-hand (pen)</option>
+        <option value="line">Straight Line</option>
+        <option value="smooth">Smooth Free-hand</option>
+        <option value="polygon">Polygon Tool</option>
+      </select>
+      <button id="toggleFill">Fill Mode: AUTO</button>
+    </div>
+
+    <div class="tool-row" style="margin-top:8px">
+      <button id="undoBtn">Undo</button>
+      <button id="redoBtn">Redo</button>
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <div style="flex:1">
+        <div class="small-hint">Colour</div>
+        <input type="color" id="drawColour" value="#ff0000">
+      </div>
+      <div style="flex:1">
+        <div class="small-hint">Thickness</div>
+        <input type="range" id="drawThickness" min="1" max="32" value="4" class="slider">
+      </div>
+    </div>
+
+    <div class="row" style="margin-top:8px">
+      <div style="flex:1">
+        <div class="small-hint">Fill opacity</div>
+        <input type="range" id="fillOpacity" min="0" max="1" step="0.05" value="0.6" class="slider">
+      </div>
+      <div style="flex:1">
+        <div class="small-hint">Diagnosis opacity</div>
+        <input type="range" id="diagnosisOpacity" min="0" max="1" step="0.05" value="0.9" class="slider">
+      </div>
+    </div>
+
+    <div class="controls" style="margin-top:8px">
+      <button id="toggleOutlines">Toggle Outlines</button>
+      <button id="clearSelection">Clear</button>
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:10px">
+      <button id="resetAll">Reset All</button>
+      <button id="savePNG" class="primary">Save diagnosis.png</button>
+    </div>
+
+    <div class="status-box" id="statusBox">Ready.</div>
+  </div>
+
+  <div id="canvasHolder">
+    <canvas id="canvas"></canvas>
+  </div>
+</div>
+
+<script src="organs.js"></script>
+<script src="diagnoses.js"></script>
+<script src="app.js"></script>
+
+<!-- 🆕 Register service worker -->
+<script>
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/service-worker.js')
+      .then(reg => console.log("Service Worker registered:", reg.scope))
+      .catch(err => console.warn("Service Worker registration failed:", err));
+  });
+}
+</script>
+
+</body>
+</html>
