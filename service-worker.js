@@ -1,30 +1,19 @@
-// service-worker.js — safe version
 
-self.addEventListener("install", (event) => {
+// Self-destructing service worker
+
+self.addEventListener("install", event => {
   self.skipWaiting();
 });
 
-self.addEventListener("activate", (event) => {
-  clients.claim();
+self.addEventListener("activate", event => {
+  event.waitUntil(
+    caches.keys().then(keys => Promise.all(keys.map(k => caches.delete(k))))
+      .then(() => self.registration.unregister())
+      .then(() => clients.claim())
+  );
 });
 
-// DO NOT INTERCEPT external requests
-self.addEventListener("fetch", (event) => {
-  const url = new URL(event.request.url);
-
-  // Never intercept Google Apps Script requests
-  if (url.origin.includes("script.google.com") ||
-      url.origin.includes("googleusercontent.com")) {
-    return; // allow normal network fetch
-  }
-
-  // Always fetch fresh HTML/JS files
-  if (event.request.destination === "document" ||
-      event.request.destination === "script") {
-    event.respondWith(fetch(event.request));
-    return;
-  }
-
-  // Default (no caching)
-  event.respondWith(fetch(event.request));
+self.addEventListener("fetch", event => {
+  // Do nothing — this disables all intercepting
 });
+
