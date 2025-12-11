@@ -1325,67 +1325,146 @@ if (clearSelectionBtn) {
 
 
 /* ---------------- 10) RESET / SAVE / MISC ---------------- */
-if(resetAllBtn) resetAllBtn.addEventListener("click", ()=>{
+
+if (resetAllBtn) resetAllBtn.addEventListener("click", () => {
   shapes = [];
   polygonPoints = [];
   selectedShapeIds.clear();
   selectedOrgNames.clear();
-  activeShapeId = null; activeOrg = null;
+  activeShapeId = null; 
+  activeOrg = null;
+
   // keep undo/redo independent by design; do NOT push reset into undo
-  undoStack = []; redoStack = [];
+  undoStack = []; 
+  redoStack = [];
+
   organDiagnoses = {}; // if you want to preserve organDiagnoses on reset, change this
   drawEverything();
   logStatus("Reset All performed");
 });
 
-if(savePNGBtn) savePNGBtn.addEventListener("click", ()=>{
-  if(!canvas) return;
-  const link = document.createElement("a");
-  link.download = "diagnosis.png";
-  link.href = canvas.toDataURL("image/png");
-  link.click();
+
+/* ===========================================================
+   SAVE DIAGNOSIS WITH CLINIC UPLOAD + SECURE LOCAL FALLBACK
+   =========================================================== */
+
+if (savePNGBtn) savePNGBtn.addEventListener("click", async () => {
+  if (!canvas) return;
+
+  // 1) Grab PNG data
+  const dataURL = canvas.toDataURL("image/png");
+
+  // 2) Extract URL parameters silently
+  const urlParams = new URLSearchParams(window.location.search);
+  const recordId = urlParams.get("r");
+  const patientName = urlParams.get("n");
+
+  // 3) Clean patient name for filename (letters + numbers only)
+  let cleanName = "";
+  if (patientName) cleanName = patientName.replace(/[^A-Za-z0-9]/g, "");
+
+  // 4) Build filename (used for clinic save OR fallback local save)
+  const filename =
+    cleanName && recordId
+      ? `${cleanName}${recordId}.png`
+      : `diagnosis.png`;
+
+  // Helper: perform local download
+  const saveLocal = () => {
+    const link = document.createElement("a");
+    link.download = filename;
+    link.href = dataURL;
+    link.click();
+  };
+
+  // 5) If metadata missing → skip upload completely (public user)
+  if (!recordId || !patientName) {
+    // Show safe fallback message
+    if (confirm("Image can only be saved to local computer.")) {
+      saveLocal();
+    }
+    return;
+  }
+
+  // 6) Attempt silent clinic upload
+  try {
+    const response = await fetch("https://script.google.com/macros/s/AKfycbwlEDWdqt7jsPvwM9iQHVHU1AYJscn22xxQQrYNfY7QOh7gVSonDEtIRMMu0_Tn4BvT/exec", {
+      method: "POST",
+      body: JSON.stringify({
+        action: "saveGIImage",
+        recordId: recordId,
+        filename: filename,
+        imageData: dataURL
+      }),
+      headers: { "Content-Type": "application/json" }
+    });
+
+    const result = await response.json();
+
+    if (result && result.success === true) {
+      // SUCCESS → silent finish
+      return;
+    }
+
+    // FALLBACK → generic message, no backend exposure
+    if (confirm("Image can only be saved to local computer.")) {
+      saveLocal();
+    }
+
+  } catch (err) {
+    // Any error → same generic fallback
+    if (confirm("Image can only be saved to local computer.")) {
+      saveLocal();
+    }
+  }
 });
 
+
 /* Undo/Redo UI bindings */
-if(undoBtn) undoBtn.addEventListener("click", ()=> { doUndo(); });
-if(redoBtn) redoBtn.addEventListener("click", ()=> { doRedo(); });
+if (undoBtn) undoBtn.addEventListener("click", () => { 
+  doUndo(); 
+});
+if (redoBtn) redoBtn.addEventListener("click", () => { 
+  doRedo(); 
+});
 
 
 /* ---------- RESTORE DIAGNOSIS UI EVENT HANDLERS ---------- */
 
 if (diagnosisSelect) {
-    diagnosisSelect.addEventListener("change", () => {
-        const val = diagnosisSelect.value;
+  diagnosisSelect.addEventListener("change", () => {
+    const val = diagnosisSelect.value;
 
-        if (!val) return;
+    if (!val) return;
 
-        // If user selects "Other" → reveal text box but do NOT assign yet
-        if (val === "Other") {
-            if (otherBoxWrapper) otherBoxWrapper.style.display = "block";
-            return;
-        }
+    // If user selects "Other" → reveal text box but do NOT assign yet
+    if (val === "Other") {
+      if (otherBoxWrapper) otherBoxWrapper.style.display = "block";
+      return;
+    }
 
-        // Normal diagnosis assignment
-        assignDiagnosisToTarget(val);
-    });
+    // Normal diagnosis assignment
+    assignDiagnosisToTarget(val);
+  });
 }
 
 if (diagnosisOther) {
 
-    // Commit typed "Other" text on Enter
-    diagnosisOther.addEventListener("keydown", (e) => {
-        if (e.key === "Enter") {
-            const t = diagnosisOther.value.trim();
-            if (t) assignDiagnosisToTarget(t);
-        }
-    });
+  // Commit typed "Other" text on Enter
+  diagnosisOther.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      const t = diagnosisOther.value.trim();
+      if (t) assignDiagnosisToTarget(t);
+    }
+  });
 
-    // Also commit when leaving the text field
-    diagnosisOther.addEventListener("blur", () => {
-        const t = diagnosisOther.value.trim();
-        if (t) assignDiagnosisToTarget(t);
-    });
+  // Also commit when leaving the text field
+  diagnosisOther.addEventListener("blur", () => {
+    const t = diagnosisOther.value.trim();
+    if (t) assignDiagnosisToTarget(t);
+  });
 }
+
 
 
 
@@ -1577,4 +1656,5 @@ function init() {
 
 /* Run init immediately */
 init();
+
 
