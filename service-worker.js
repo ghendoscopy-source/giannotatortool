@@ -1,23 +1,30 @@
-// service-worker.js — CACHE DISABLED FOR JS/HTML
+// service-worker.js — safe version
 
-self.addEventListener("install", (e) => {
+self.addEventListener("install", (event) => {
   self.skipWaiting();
 });
 
-self.addEventListener("activate", (e) => {
+self.addEventListener("activate", (event) => {
   clients.claim();
 });
 
-// Intercept requests — DO NOT CACHE ANYTHING
+// DO NOT INTERCEPT external requests
 self.addEventListener("fetch", (event) => {
-  const req = event.request;
+  const url = new URL(event.request.url);
 
-  // Always fetch fresh JS/HTML so app.js never becomes stale
-  if (req.destination === "script" || req.destination === "document") {
-    event.respondWith(fetch(req));
+  // Never intercept Google Apps Script requests
+  if (url.origin.includes("script.google.com") ||
+      url.origin.includes("googleusercontent.com")) {
+    return; // allow normal network fetch
+  }
+
+  // Always fetch fresh HTML/JS files
+  if (event.request.destination === "document" ||
+      event.request.destination === "script") {
+    event.respondWith(fetch(event.request));
     return;
   }
 
-  // Allow normal network fetch for everything else (images, patterns, etc.)
-  event.respondWith(fetch(req));
+  // Default (no caching)
+  event.respondWith(fetch(event.request));
 });
