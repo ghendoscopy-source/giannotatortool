@@ -120,30 +120,32 @@
 <script src="app.js?v=20250206"></script>
 
 
-<!-- Register service worker (clean, single, versioned) -->
+<!-- Register service worker (forced update with version) -->
 <script>
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker
-      .register("service-worker.js?v=delete1")  // version forces browser to fetch fresh copy
+      .register("service-worker.js?v=delete1")
       .then(reg => {
         console.log("Service Worker registered:", reg.scope);
 
-        // Auto-reload when a new SW takes control
+        // Auto-reload after new SW activates
         reg.onupdatefound = () => {
           const newSW = reg.installing;
           newSW.onstatechange = () => {
             if (newSW.state === "activated" && navigator.serviceWorker.controller) {
-              console.log("New service worker activated — reloading page");
+              console.log("New service worker activated — reloading");
               location.reload();
             }
           };
         };
       })
-      .catch(err => console.warn("Service Worker registration failed:", err));
+      .catch(err => console.warn("SW registration failed:", err));
   });
 }
 </script>
+
+
 
 
 
