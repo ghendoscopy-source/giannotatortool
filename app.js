@@ -1331,11 +1331,11 @@ if (resetAllBtn) resetAllBtn.addEventListener("click", () => {
   polygonPoints = [];
   selectedShapeIds.clear();
   selectedOrgNames.clear();
-  activeShapeId = null; 
+  activeShapeId = null;
   activeOrg = null;
 
   // keep undo/redo independent by design; do NOT push reset into undo
-  undoStack = []; 
+  undoStack = [];
   redoStack = [];
 
   organDiagnoses = {}; // if you want to preserve organDiagnoses on reset, change this
@@ -1351,10 +1351,10 @@ if (resetAllBtn) resetAllBtn.addEventListener("click", () => {
 if (savePNGBtn) savePNGBtn.addEventListener("click", async () => {
   if (!canvas) return;
 
-  // 1) Grab PNG data
+  // 1) Capture PNG image from canvas
   const dataURL = canvas.toDataURL("image/png");
 
-  // 2) Extract URL parameters silently
+  // 2) Extract URL parameters from ?r=...&n=...
   const urlParams = new URLSearchParams(window.location.search);
   const recordId = urlParams.get("r");
   const patientName = urlParams.get("n");
@@ -1363,13 +1363,13 @@ if (savePNGBtn) savePNGBtn.addEventListener("click", async () => {
   let cleanName = "";
   if (patientName) cleanName = patientName.replace(/[^A-Za-z0-9]/g, "");
 
-  // 4) Build filename (used for clinic save OR fallback local save)
+  // 4) Build filename
   const filename =
     cleanName && recordId
       ? `${cleanName}${recordId}.png`
       : `diagnosis.png`;
 
-  // Helper: perform local download
+  // Helper: perform local download (fallback)
   const saveLocal = () => {
     const link = document.createElement("a");
     link.download = filename;
@@ -1377,42 +1377,44 @@ if (savePNGBtn) savePNGBtn.addEventListener("click", async () => {
     link.click();
   };
 
-  // 5) If metadata missing → skip upload completely (public user)
+  // 5) If required parameters missing → public/standalone mode
   if (!recordId || !patientName) {
-    // Show safe fallback message
     if (confirm("Image can only be saved to local computer.")) {
       saveLocal();
     }
     return;
   }
 
-  // 6) Attempt silent clinic upload
+  // 6) Attempt silent upload to Gastro Clinic WebApp
   try {
-    const response = await fetch("https://script.google.com/macros/s/AKfycbwlEDWdqt7jsPvwM9iQHVHU1AYJscn22xxQQrYNfY7QOh7gVSonDEtIRMMu0_Tn4BvT/exec", {
-      method: "POST",
-      body: JSON.stringify({
-        action: "saveGIImage",
-        recordId: recordId,
-        filename: filename,
-        imageData: dataURL
-      }),
-      headers: { "Content-Type": "application/json" }
-    });
+    const response = await fetch(
+      "https://script.google.com/macros/s/AKfycbwlEDWdqt7jsPvwM9iQHVHU1AYJscn22xxQQrYNfY7QOh7gVSonDEtIRMMu0_Tn4BvT/exec",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          action: "saveGIImage",
+          recordId: recordId,
+          filename: filename,
+          imageData: dataURL
+        }),
+        headers: { "Content-Type": "application/json" }
+      }
+    );
 
     const result = await response.json();
 
+    // SUCCESS → no UI message required
     if (result && result.success === true) {
-      // SUCCESS → silent finish
       return;
     }
 
-    // FALLBACK → generic message, no backend exposure
+    // Upload failed → local fallback (generic safe message)
     if (confirm("Image can only be saved to local computer.")) {
       saveLocal();
     }
 
   } catch (err) {
-    // Any error → same generic fallback
+    // Silent error → same fallback message
     if (confirm("Image can only be saved to local computer.")) {
       saveLocal();
     }
@@ -1421,11 +1423,11 @@ if (savePNGBtn) savePNGBtn.addEventListener("click", async () => {
 
 
 /* Undo/Redo UI bindings */
-if (undoBtn) undoBtn.addEventListener("click", () => { 
-  doUndo(); 
+if (undoBtn) undoBtn.addEventListener("click", () => {
+  doUndo();
 });
-if (redoBtn) redoBtn.addEventListener("click", () => { 
-  doRedo(); 
+if (redoBtn) redoBtn.addEventListener("click", () => {
+  doRedo();
 });
 
 
@@ -1458,12 +1460,13 @@ if (diagnosisOther) {
     }
   });
 
-  // Also commit when leaving the text field
+  // Commit on losing focus
   diagnosisOther.addEventListener("blur", () => {
     const t = diagnosisOther.value.trim();
     if (t) assignDiagnosisToTarget(t);
   });
 }
+
 
 
 
@@ -1656,5 +1659,6 @@ function init() {
 
 /* Run init immediately */
 init();
+
 
 
