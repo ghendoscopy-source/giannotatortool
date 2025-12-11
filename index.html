@@ -120,36 +120,31 @@
 <script src="app.js?v=20250206"></script>
 
 
-<!-- Register service worker -->
+<!-- Register service worker (clean, single, versioned) -->
 <script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('service-worker.js')
-      .then(reg => console.log("Service Worker registered:", reg.scope))
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker
+      .register("service-worker.js?v=delete1")  // version forces browser to fetch fresh copy
+      .then(reg => {
+        console.log("Service Worker registered:", reg.scope);
+
+        // Auto-reload when a new SW takes control
+        reg.onupdatefound = () => {
+          const newSW = reg.installing;
+          newSW.onstatechange = () => {
+            if (newSW.state === "activated" && navigator.serviceWorker.controller) {
+              console.log("New service worker activated — reloading page");
+              location.reload();
+            }
+          };
+        };
+      })
       .catch(err => console.warn("Service Worker registration failed:", err));
   });
 }
 </script>
-<script>
-if ("serviceWorker" in navigator) {
-  navigator.serviceWorker.register("service-worker.js").then(reg => {
-    console.log("SW registered", reg);
 
-    // Auto-reload when SW updates
-    reg.onupdatefound = () => {
-      const newSW = reg.installing;
-      newSW.onstatechange = () => {
-        if (newSW.state === "activated" && navigator.serviceWorker.controller) {
-          console.log("New service worker activated — reloading page");
-          location.reload();
-        }
-      };
-    };
-  });
-}
-</script>
 
-</body>
-</html>
 
 
