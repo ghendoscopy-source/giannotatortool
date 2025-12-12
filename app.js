@@ -17,6 +17,8 @@
    12) INIT
    =========================================================== */
 
+const GI_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbwtAbUgkh2b9EPodTD1RXltwflZLr56VsABfZUjP3VR3_mGM1ixV2r4bfetj372Ko8A/exec";
+
 /* ---------------- 1) CONFIG & DOM ---------------- */
 const canvas = document.getElementById("canvas");
 const ctx = canvas ? canvas.getContext("2d") : null;
@@ -1769,6 +1771,7 @@ function init() {
 
 /* Run init immediately */
 init();
+
 
 
 
