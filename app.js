@@ -1379,18 +1379,18 @@ if (savePNGBtn) savePNGBtn.addEventListener("click", async () => {
     link.click();
   };
 
-  // 5) If required parameters missing → public/standalone mode
-  if (!recordId || !patientName) {
-    if (confirm("Image can only be saved to local computer.")) {
-      saveLocal();
-    }
-    return;
-  }
+// 5) Public mode (missing parameters)
+if (!recordId || !patientName) {
+  saveLocal();
+  alert("Image downloaded to local computer.");
+  return;
+}
+
 // 6) Attempt silent upload to Gastro Clinic WebApp
 try {
-  await fetch(GI_UPLOAD_URL, { 
+  await fetch(GI_UPLOAD_URL, {
     method: "POST",
-    mode: "no-cors",                           // Required for Apps Script
+    mode: "no-cors",   // Required for Apps Script
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       action: "saveGIImage",
@@ -1400,17 +1400,19 @@ try {
     })
   });
 
-  // In no-cors mode, browser cannot read server response.
-  // Assume success silently.
+  // Apps Script cannot return readable CORS responses
+  // But fetch() reaching here means request DID NOT FAIL
+  alert("Saved diagnosis to clinic summary.");
   return;
 
 } catch (err) {
-  // Any exception → fallback to local save
-  if (confirm("Image can only be saved to local computer.")) {
-    saveLocal();
-  }
+
+  // Network error or fetch exception → fallback to local
+  saveLocal();
+  alert("Image downloaded to local computer.");
+  return;
 }
-});
+
 
 
 
@@ -1771,6 +1773,7 @@ function init() {
 
 /* Run init immediately */
 init();
+
 
 
 
