@@ -1336,11 +1336,11 @@ if (resetAllBtn) resetAllBtn.addEventListener("click", () => {
   activeShapeId = null;
   activeOrg = null;
 
-  // keep undo/redo independent by design; do NOT push reset into undo
+  // Reset undo/redo
   undoStack = [];
   redoStack = [];
 
-  organDiagnoses = {}; // if you want to preserve organDiagnoses on reset, change this
+  organDiagnoses = {}; 
   drawEverything();
   logStatus("Reset All performed");
 });
@@ -1353,25 +1353,25 @@ if (resetAllBtn) resetAllBtn.addEventListener("click", () => {
 if (savePNGBtn) savePNGBtn.addEventListener("click", async () => {
   if (!canvas) return;
 
-  // 1) Capture PNG image from canvas
+  // 1) Capture PNG
   const dataURL = canvas.toDataURL("image/png");
 
-  // 2) Extract URL parameters from ?r=...&n=...
+  // 2) Read URL parameters
   const urlParams = new URLSearchParams(window.location.search);
   const recordId = urlParams.get("r");
   const patientName = urlParams.get("n");
 
-  // 3) Clean patient name for filename (letters + numbers only)
+  // 3) Clean patient name
   let cleanName = "";
   if (patientName) cleanName = patientName.replace(/[^A-Za-z0-9]/g, "");
 
-  // 4) Build filename
+  // 4) Filename
   const filename =
     cleanName && recordId
       ? `${cleanName}${recordId}.png`
       : `diagnosis.png`;
 
-  // Helper: perform local download (fallback)
+  // Local fallback
   const saveLocal = () => {
     const link = document.createElement("a");
     link.download = filename;
@@ -1379,133 +1379,18 @@ if (savePNGBtn) savePNGBtn.addEventListener("click", async () => {
     link.click();
   };
 
-// 5) Public mode (missing parameters)
-if (!recordId || !patientName) {
-  saveLocal();
-  alert("Image downloaded to local computer.");
-  return;
-}
-
-// 6) Attempt silent upload to Gastro Clinic WebApp
-try {
-  await fetch(GI_UPLOAD_URL, {
-    method: "POST",
-    mode: "no-cors",   // Required for Apps Script
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      action: "saveGIImage",
-      recordId: recordId,
-      filename: filename,
-      imageData: dataURL
-    })
-  });
-
-  // Apps Script cannot return readable CORS responses
-  // But fetch() reaching here means request DID NOT FAIL
-  alert("Saved diagnosis to clinic summary.");
-  return;
-
-} catch (err) {
-
-  // Network error or fetch exception → fallback to local
-  saveLocal();
-  alert("Image downloaded to local computer.");
-  return;
-}
-
-
-
-
-/* Undo/Redo UI bindings */
-if (undoBtn) undoBtn.addEventListener("click", () => {
-  doUndo();
-});
-if (redoBtn) redoBtn.addEventListener("click", () => {
-  doRedo();
-});
-
-
-/* ---------- RESTORE DIAGNOSIS UI EVENT HANDLERS ---------- */
-
-if (diagnosisSelect) {
-  diagnosisSelect.addEventListener("change", () => {
-    const val = diagnosisSelect.value;
-
-    if (!val) return;
-
-    // If user selects "Other" → reveal text box but do NOT assign yet
-    if (val === "Other") {
-      if (otherBoxWrapper) otherBoxWrapper.style.display = "block";
-      return;
-    }
-
-    // Normal diagnosis assignment
-    assignDiagnosisToTarget(val);
-  });
-}
-
-if (diagnosisOther) {
-
-  // Commit typed "Other" text on Enter
-  diagnosisOther.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      const t = diagnosisOther.value.trim();
-      if (t) assignDiagnosisToTarget(t);
-    }
-  });
-
-  // Commit on losing focus
-  diagnosisOther.addEventListener("blur", () => {
-    const t = diagnosisOther.value.trim();
-    if (t) assignDiagnosisToTarget(t);
-  });
-}
-
-/* ===========================================================
-   SAVE DIAGNOSIS WITH CLINIC UPLOAD + SECURE LOCAL FALLBACK
-   =========================================================== */
-
-if (savePNGBtn) savePNGBtn.addEventListener("click", async () => {
-  if (!canvas) return;
-
-  // 1) Capture PNG image from canvas
-  const dataURL = canvas.toDataURL("image/png");
-
-  // 2) Extract URL parameters from ?r=...&n=...
-  const urlParams = new URLSearchParams(window.location.search);
-  const recordId = urlParams.get("r");
-  const patientName = urlParams.get("n");
-
-  // 3) Clean patient name for filename (letters + numbers only)
-  let cleanName = "";
-  if (patientName) cleanName = patientName.replace(/[^A-Za-z0-9]/g, "");
-
-  // 4) Build filename
-  const filename =
-    cleanName && recordId
-      ? `${cleanName}${recordId}.png`
-      : `diagnosis.png`;
-
-  // Helper: perform local download (fallback)
-  const saveLocal = () => {
-    const link = document.createElement("a");
-    link.download = filename;
-    link.href = dataURL;
-    link.click();
-  };
-
-  // 5) If missing parameters → standalone mode
+  // 5) Public/standalone mode → always download
   if (!recordId || !patientName) {
-    if (confirm("Image can only be saved to local computer.")) {
-      saveLocal();
-    }
+    saveLocal();
+    alert("Image downloaded to local computer.");
     return;
   }
 
-  // 6) Attempt silent upload to GI Upload WebApp
+  // 6) Clinic mode → silent upload
   try {
-    const response = await fetch(GI_UPLOAD_URL, {
+    await fetch(GI_UPLOAD_URL, {
       method: "POST",
+      mode: "no-cors",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         action: "saveGIImage",
@@ -1515,28 +1400,21 @@ if (savePNGBtn) savePNGBtn.addEventListener("click", async () => {
       })
     });
 
-    const result = await response.json();
-
-    // SUCCESS → silent
-    if (result && result.success === true) {
-      return;
-    }
-
-    // FAILURE (response received but not success)
-    if (confirm("Image can only be saved to local computer.")) {
-      saveLocal();
-    }
+    // If fetch didn't throw → treat as successful upload
+    alert("Saved diagnosis to clinic summary.");
+    return;
 
   } catch (err) {
-    // Network/CORS error or Apps Script unreachable
-    if (confirm("Image can only be saved to local computer.")) {
-      saveLocal();
-    }
+    // Network error → fallback
+    saveLocal();
+    alert("Image downloaded to local computer.");
+    return;
   }
 });
 
 
-/* Undo/Redo UI bindings */
+/* ---------------- UNDO / REDO ---------------- */
+
 if (undoBtn) undoBtn.addEventListener("click", () => {
   doUndo();
 });
@@ -1553,20 +1431,20 @@ if (diagnosisSelect) {
 
     if (!val) return;
 
-    // If user selects "Other" → reveal text box but do not assign yet
+    // Show "Other" textbox
     if (val === "Other") {
       if (otherBoxWrapper) otherBoxWrapper.style.display = "block";
       return;
     }
 
-    // Normal diagnosis assignment
+    // Assign normal diagnosis
     assignDiagnosisToTarget(val);
   });
 }
 
 if (diagnosisOther) {
 
-  // Commit typed "Other" text on Enter
+  // Commit custom text on Enter
   diagnosisOther.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       const t = diagnosisOther.value.trim();
@@ -1574,12 +1452,13 @@ if (diagnosisOther) {
     }
   });
 
-  // Commit on blur
+  // Commit custom text on blur
   diagnosisOther.addEventListener("blur", () => {
     const t = diagnosisOther.value.trim();
     if (t) assignDiagnosisToTarget(t);
   });
 }
+
 
 
 
@@ -1773,6 +1652,7 @@ function init() {
 
 /* Run init immediately */
 init();
+
 
 
 
