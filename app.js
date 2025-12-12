@@ -1384,40 +1384,32 @@ if (savePNGBtn) savePNGBtn.addEventListener("click", async () => {
     }
     return;
   }
+// 6) Attempt silent upload to Gastro Clinic WebApp
+try {
+  await fetch(GI_UPLOAD_URL, { 
+    method: "POST",
+    mode: "no-cors",                           // Required for Apps Script
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      action: "saveGIImage",
+      recordId: recordId,
+      filename: filename,
+      imageData: dataURL
+    })
+  });
 
-  // 6) Attempt silent upload to Gastro Clinic WebApp
-  try {
-   const response = await fetch(GI_UPLOAD_URL, { 
-        method: "POST",
-        body: JSON.stringify({
-          action: "saveGIImage",
-          recordId: recordId,
-          filename: filename,
-          imageData: dataURL
-        }),
-        headers: { "Content-Type": "application/json" }
-      }
-    );
+  // In no-cors mode, browser cannot read server response.
+  // Assume success silently.
+  return;
 
-    const result = await response.json();
-
-    // SUCCESS → no UI message required
-    if (result && result.success === true) {
-      return;
-    }
-
-    // Upload failed → local fallback (generic safe message)
-    if (confirm("Image can only be saved to local computer.")) {
-      saveLocal();
-    }
-
-  } catch (err) {
-    // Silent error → same fallback message
-    if (confirm("Image can only be saved to local computer.")) {
-      saveLocal();
-    }
+} catch (err) {
+  // Any exception → fallback to local save
+  if (confirm("Image can only be saved to local computer.")) {
+    saveLocal();
   }
+}
 });
+
 
 
 /* Undo/Redo UI bindings */
@@ -1657,6 +1649,7 @@ function init() {
 
 /* Run init immediately */
 init();
+
 
 
 
