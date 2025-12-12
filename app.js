@@ -1387,9 +1387,7 @@ if (savePNGBtn) savePNGBtn.addEventListener("click", async () => {
 
   // 6) Attempt silent upload to Gastro Clinic WebApp
   try {
-    const response = await fetch(
-      "https://script.google.com/macros/s/AKfycbwlEDWdqt7jsPvwM9iQHVHU1AYJscn22xxQQrYNfY7QOh7gVSonDEtIRMMu0_Tn4BvT/exec",
-      {
+   const response = await fetch(GI_UPLOAD_URL, { 
         method: "POST",
         body: JSON.stringify({
           action: "saveGIImage",
@@ -1659,6 +1657,7 @@ function init() {
 
 /* Run init immediately */
 init();
+
 
 
 
