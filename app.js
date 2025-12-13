@@ -17,7 +17,7 @@
    12) INIT
    =========================================================== */
 
-const GI_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbwtAbUgkh2b9EPodTD1RXltwflZLr56VsABfZUjP3VR3_mGM1ixV2r4bfetj372Ko8A/exec";
+const GI_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbzHef9CQbh6sxkY51AOLxlNJ4uHSJC9J4MXl44HcPK-w9cIAusHnLQBjKykA2uzcO6L/exec";
 
 /* ---------------- 1) CONFIG & DOM ---------------- */
 const canvas = document.getElementById("canvas");
@@ -1655,6 +1655,7 @@ function init() {
 init();
 
 /* end of file */
+
 
 
 
