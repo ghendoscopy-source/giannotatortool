@@ -17,7 +17,10 @@
    12) INIT
    =========================================================== */
 
-const GI_UPLOAD_URL = "https://script.google.com/macros/s/AKfycbzHef9CQbh6sxkY51AOLxlNJ4uHSJC9J4MXl44HcPK-w9cIAusHnLQBjKykA2uzcO6L/exec";
+// Auto-detect upload URL from link parameter (supports multiple clinics)
+const urlParams = new URLSearchParams(window.location.search);
+const GI_UPLOAD_URL = urlParams.get('uploadUrl') || 
+  "https://script.google.com/macros/s/AKfycbzHef9CQbh6sxkY51AOLxlNJ4uHSJC9J4MXl44HcPK-w9cIAusHnLQBjKykA2uzcO6L/exec"; // fallback for original project
 
 /* ---------------- 1) CONFIG & DOM ---------------- */
 const canvas = document.getElementById("canvas");
@@ -1655,6 +1658,7 @@ function init() {
 init();
 
 /* end of file */
+
 
 
 
